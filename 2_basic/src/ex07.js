@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import gsap from "gsap";
 
 export default function example() {
   const canvas = document.querySelector("#three-canvas");
@@ -13,7 +14,7 @@ export default function example() {
   const scene = new THREE.Scene();
 
   //안개만들기 => 입체감 살림
-  scene.fog = new THREE.Fog("black", 1, 10);
+  scene.fog = new THREE.Fog("skyblue", 1, 10);
 
   const light = new THREE.DirectionalLight(0xffffff, 1);
   light.position.z = 10;
@@ -71,6 +72,16 @@ export default function example() {
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.render(scene, camera);
   }
+
+  //gsap
+
+  meshes.forEach((item) => {
+    gsap.to(item.position, {
+      duration: Math.random() * 10,
+      y: Math.random() * 5 - 2.5,
+      x: Math.random() * 5 - 2.5,
+    });
+  });
 
   window.addEventListener("resize", setSize);
 

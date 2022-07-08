@@ -4,4 +4,18 @@ node_modules/
 
 /start_fin
 
-/three.js-master
+/three.js-master    
+
+/utility_fin
+
+/geometry_fin
+
+/transform_fin
+
+/controls_fin
+
+/material_fin
+
+/raycaster_fin
+
+/light_fin
