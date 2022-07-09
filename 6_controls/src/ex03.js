@@ -1,7 +1,5 @@
 import * as THREE from "three";
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
-
-// ----- 주제: OrbitControls
+import { FlyControls } from "three/examples/jsm/controls/FlyControls";
 
 export default function example() {
   const canvas = document.querySelector("#three-canvas");
@@ -27,27 +25,15 @@ export default function example() {
   const ambientLight = new THREE.AmbientLight("white", 0.5);
   scene.add(ambientLight);
 
-  //controls
-  const controls = new OrbitControls(camera, renderer.domElement);
+  //flycontrol
+  const controls = new FlyControls(camera, renderer.domElement);
 
-  //컨트롤 이동 부드럽게
-  //   controls.enableDamping = true;
-
-  //줌 설정
-  //   controls.enableZoom = false;
-
-  //최대거리, 최소거리
-  //   controls.minDistance = 5;
-  //   controls.maxDistance = 10;
-
-  //수직방향 회전각도
-  //   controls.minPolarAngle = Math.PI / 4; //45도
-  //   controls.maxPolarAngle = Math.PI / 2; //45도
-
-  //회전 중심축 타겟
-  //   controls.target.set(2, 2, 2);
-
-  controls.autoRotate = true;
+  //마우스 위치
+  controls.rollSpeed = 0.5;
+  //wasd
+  controls.movementSpeed = 3;
+  //마우스에 반응하지 않음
+  controls.dragToLook = true;
 
   const directionalLight = new THREE.DirectionalLight("white", 1);
   directionalLight.position.x = 1;
@@ -56,7 +42,6 @@ export default function example() {
 
   const geometry = new THREE.BoxGeometry(1, 1, 1);
 
-  //위치 랜덤
   let mesh;
   let material;
   for (let i = 0; i < 20; i++) {
@@ -82,6 +67,9 @@ export default function example() {
   function draw() {
     const delta = clock.getDelta();
 
+    //delta 필요
+    controls.update(delta);
+
     renderer.render(scene, camera);
     renderer.setAnimationLoop(draw);
   }
@@ -90,8 +78,6 @@ export default function example() {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
-
-    controls.update();
 
     renderer.render(scene, camera);
   }

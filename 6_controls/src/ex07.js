@@ -1,7 +1,6 @@
 import * as THREE from "three";
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
-
-// ----- 주제: OrbitControls
+import { PointerLockControls } from "three/examples/jsm/controls/PointerLockControls";
+import { KeyController } from "./keyController";
 
 export default function example() {
   const canvas = document.querySelector("#three-canvas");
@@ -27,27 +26,40 @@ export default function example() {
   const ambientLight = new THREE.AmbientLight("white", 0.5);
   scene.add(ambientLight);
 
-  //controls
-  const controls = new OrbitControls(camera, renderer.domElement);
+  const controls = new PointerLockControls(camera, renderer.domElement);
 
-  //컨트롤 이동 부드럽게
-  //   controls.enableDamping = true;
+  controls.domElement.addEventListener("click", () => {
+    controls.lock();
+  });
 
-  //줌 설정
-  //   controls.enableZoom = false;
+  controls.addEventListener("lock", () => {
+    console.log("lock");
+  });
 
-  //최대거리, 최소거리
-  //   controls.minDistance = 5;
-  //   controls.maxDistance = 10;
+  controls.addEventListener("unlock", () => {
+    console.log("unlock");
+  });
 
-  //수직방향 회전각도
-  //   controls.minPolarAngle = Math.PI / 4; //45도
-  //   controls.maxPolarAngle = Math.PI / 2; //45도
+  //keycontrol
+  const keyController = new KeyController();
 
-  //회전 중심축 타겟
-  //   controls.target.set(2, 2, 2);
+  function walk() {
+    if (keyController.keys["KeyW"] || keyController.keys["ArrowUp"]) {
+      controls.moveForward(0.03);
+    }
 
-  controls.autoRotate = true;
+    if (keyController.keys["KeyS"] || keyController.keys["ArrowDown"]) {
+      controls.moveForward(-0.03);
+    }
+
+    if (keyController.keys["KeyA"] || keyController.keys["ArrowLeft"]) {
+      controls.moveRight(-0.03);
+    }
+
+    if (keyController.keys["KeyD"] || keyController.keys["ArrowRight"]) {
+      controls.moveRight(0.03);
+    }
+  }
 
   const directionalLight = new THREE.DirectionalLight("white", 1);
   directionalLight.position.x = 1;
@@ -56,7 +68,6 @@ export default function example() {
 
   const geometry = new THREE.BoxGeometry(1, 1, 1);
 
-  //위치 랜덤
   let mesh;
   let material;
   for (let i = 0; i < 20; i++) {
@@ -82,6 +93,9 @@ export default function example() {
   function draw() {
     const delta = clock.getDelta();
 
+    //계속 실행시킴
+    walk();
+
     renderer.render(scene, camera);
     renderer.setAnimationLoop(draw);
   }
@@ -90,8 +104,6 @@ export default function example() {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
-
-    controls.update();
 
     renderer.render(scene, camera);
   }

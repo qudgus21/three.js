@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { TrackballControls } from "three/examples/jsm/controls/TrackballControls";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 
 // ----- 주제: OrbitControls
@@ -27,27 +28,8 @@ export default function example() {
   const ambientLight = new THREE.AmbientLight("white", 0.5);
   scene.add(ambientLight);
 
-  //controls
-  const controls = new OrbitControls(camera, renderer.domElement);
-
-  //컨트롤 이동 부드럽게
-  //   controls.enableDamping = true;
-
-  //줌 설정
-  //   controls.enableZoom = false;
-
-  //최대거리, 최소거리
-  //   controls.minDistance = 5;
-  //   controls.maxDistance = 10;
-
-  //수직방향 회전각도
-  //   controls.minPolarAngle = Math.PI / 4; //45도
-  //   controls.maxPolarAngle = Math.PI / 2; //45도
-
-  //회전 중심축 타겟
-  //   controls.target.set(2, 2, 2);
-
-  controls.autoRotate = true;
+  //controls => not working
+  const controls = new TrackballControls(camera, renderer.domElement);
 
   const directionalLight = new THREE.DirectionalLight("white", 1);
   directionalLight.position.x = 1;
@@ -82,6 +64,8 @@ export default function example() {
   function draw() {
     const delta = clock.getDelta();
 
+    controls.update();
+
     renderer.render(scene, camera);
     renderer.setAnimationLoop(draw);
   }
@@ -90,8 +74,6 @@ export default function example() {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
-
-    controls.update();
 
     renderer.render(scene, camera);
   }
