@@ -68,7 +68,7 @@ export default function example() {
     for (let i = 0; i < positionArray.length; i += 3) {
       positionArray[i] += Math.sin(elapsed + randomArray[i] * 200) * 0.002;
       positionArray[i + 1] += Math.sin(elapsed + randomArray[i] * 200) * 0.002;
-      positionArray[i + 2] += Math.sin(elapsed + randomArray[i] * 200) * 0.002;
+      positionArray[i + 2] += Math.sin(elapsed + randomArray[i] * 2 00) * 0.002;
     }
 
     geometry.attributes.position.needsUpdate = true;
