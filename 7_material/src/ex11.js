@@ -2,6 +2,29 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 
 export default function example() {
+  const loadingManager = new THREE.LoadingManager();
+  loadingManager.onStart = () => {
+    console.log("로드 시작");
+  };
+
+  loadingManager.onProgress = (img) => {
+    console.log(img + "로드");
+  };
+
+  loadingManager.onLoad = () => {
+    console.log("로드 완료");
+  };
+
+  loadingManager.onError = () => {
+    console.log("에러");
+  };
+
+  const textureLoader = new THREE.TextureLoader(loadingManager);
+
+  const gradientTexture = textureLoader.load("/textures/gradient.png");
+
+  gradientTexture.magFilter = THREE.NearestFilter;
+
   const canvas = document.querySelector("#three-canvas");
   const renderer = new THREE.WebGLRenderer({
     canvas,
@@ -23,24 +46,22 @@ export default function example() {
   scene.add(camera);
 
   const ambientLight = new THREE.AmbientLight("white", 0.5);
-  scene.add(ambientLight);
-
   const directionalLight = new THREE.DirectionalLight("white", 1);
-  directionalLight.position.x = 1;
-  directionalLight.position.z = 2;
-  scene.add(directionalLight);
+  directionalLight.position.set(1, 1, 2);
+  scene.add(ambientLight, directionalLight);
 
-  const geometry = new THREE.BoxGeometry(1, 1, 1);
-
-  //basic (빛, 그림자 영향을 받지 않음) , 성능이 좋음
-  const material = new THREE.MeshBasicMaterial({
-    color: "red",
-  });
-
-  //lookat처리 자동으로됨
   const controls = new OrbitControls(camera, renderer.domElement);
 
+  const geometry = new THREE.BoxGeometry(2, 2, 2);
+
+  //법선...? 그냥 방향에 따라 색깔 변해서 이쁨
+  const material = new THREE.MeshNormalMaterial({
+    // color: "plum",
+    // gradientMap: gradientTexture,
+  });
+
   const mesh = new THREE.Mesh(geometry, material);
+
   scene.add(mesh);
 
   const clock = new THREE.Clock();

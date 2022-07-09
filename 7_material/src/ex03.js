@@ -30,18 +30,34 @@ export default function example() {
   directionalLight.position.z = 2;
   scene.add(directionalLight);
 
-  const geometry = new THREE.BoxGeometry(1, 1, 1);
+  const geometry = new THREE.SphereGeometry(1, 16, 16);
 
-  //basic (빛, 그림자 영향을 받지 않음) , 성능이 좋음
-  const material = new THREE.MeshBasicMaterial({
+  const material1 = new THREE.MeshPhongMaterial({
     color: "red",
+    shininess: 100,
   });
 
-  //lookat처리 자동으로됨
+  const material2 = new THREE.MeshStandardMaterial({
+    color: "red",
+    //0으로 갈수록 맨질맨질 광도.
+    roughness: 0.3,
+    //금속성?
+    metalness: 0.8,
+  });
+
   const controls = new OrbitControls(camera, renderer.domElement);
 
-  const mesh = new THREE.Mesh(geometry, material);
-  scene.add(mesh);
+  const mesh1 = new THREE.Mesh(geometry, material1);
+  const mesh2 = new THREE.Mesh(geometry, material2);
+
+  scene.background = new THREE.Color("white");
+
+  //lam
+  mesh1.position.set(-2, 0, 0);
+
+  mesh2.position.set(2, 0, 0);
+
+  scene.add(mesh1, mesh2);
 
   const clock = new THREE.Clock();
 
