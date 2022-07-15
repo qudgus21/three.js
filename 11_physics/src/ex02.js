@@ -11,6 +11,8 @@ export default function example() {
   });
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.setPixelRatio(window.devicePixelRatio > 1 ? 2 : 1);
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
   // Scene
   const scene = new THREE.Scene();
@@ -33,6 +35,7 @@ export default function example() {
   const directionalLight = new THREE.DirectionalLight("white", 1);
   directionalLight.position.x = 1;
   directionalLight.position.z = 2;
+  directionalLight.castShadow = true;
   scene.add(directionalLight);
 
   // Controls
@@ -42,24 +45,61 @@ export default function example() {
   const cannonWorld = new CANNON.World();
   cannonWorld.gravity.set(0, -10, 0);
 
+  // Contact Material
+  const defaultMaterial = new CANNON.Material("default");
+  const rubberMaterial = new CANNON.Material("rubber");
+  const ironMaterial = new CANNON.Material("iron"); //임의로 이름 짓는것임
+
+  const defaultContactMaterial = new CANNON.ContactMaterial(
+    //얘내 둘이 부딪힘
+    defaultMaterial,
+    defaultMaterial,
+    {
+      friction: 0.5,
+      restitution: 0.5, //반발력
+    }
+  );
+  cannonWorld.defaultContactMaterial = defaultContactMaterial;
+
+  const rubberDefaultContactMaterial = new CANNON.ContactMaterial(
+    rubberMaterial, //공을 이걸로 하고싶다
+    defaultMaterial, //바닥을 이걸로 하고싶고
+    {
+      friction: 0.5,
+      restitution: 0.7,
+    }
+  );
+  cannonWorld.addContactMaterial(rubberDefaultContactMaterial);
+
+  const ironDefaultContactMaterial = new CANNON.ContactMaterial(
+    ironMaterial,
+    defaultMaterial,
+    {
+      friction: 0.5,
+      restitution: 0.1,
+    }
+  );
+  cannonWorld.addContactMaterial(ironDefaultContactMaterial);
+
   const floorShape = new CANNON.Plane();
   const floorBody = new CANNON.Body({
-    mass: 0, //바닥은 중력의 영향을 받지 않게 함
+    mass: 0,
     position: new CANNON.Vec3(0, 0, 0),
     shape: floorShape,
+    material: defaultMaterial,
   });
-  //회전시킴 like판때기
   floorBody.quaternion.setFromAxisAngle(new CANNON.Vec3(-1, 0, 0), Math.PI / 2);
   cannonWorld.addBody(floorBody);
 
-  //중심을 기준으로 얼만큼 갈건지..? threejs 0.5면 여기는
-  const boxShape = new CANNON.Box(new CANNON.Vec3(0.25, 2.5, 0.25)); //boxGeometry의 절반크기
-  const boxBody = new CANNON.Body({
+  const sphereShape = new CANNON.Sphere(0.5);
+  const sphereBody = new CANNON.Body({
     mass: 1,
-    position: new CANNON.Vec3(0, 10, 0), //이 높이에서 떨어짐
-    shape: boxShape,
+    position: new CANNON.Vec3(0, 10, 0),
+    shape: sphereShape,
+    // material: rubberMaterial
+    material: ironMaterial,
   });
-  cannonWorld.addBody(boxBody);
+  cannonWorld.addBody(sphereBody);
 
   // Mesh
   const floorMesh = new THREE.Mesh(
@@ -69,15 +109,17 @@ export default function example() {
     })
   );
   floorMesh.rotation.x = -Math.PI / 2;
+  floorMesh.receiveShadow = true;
   scene.add(floorMesh);
 
-  const boxGeometry = new THREE.BoxGeometry(0.5, 5, 0.5);
-  const boxMaterial = new THREE.MeshStandardMaterial({
+  const sphereGeometry = new THREE.SphereGeometry(0.5);
+  const sphereMaterial = new THREE.MeshStandardMaterial({
     color: "seagreen",
   });
-  const boxMesh = new THREE.Mesh(boxGeometry, boxMaterial);
-  boxMesh.position.y = 0.5;
-  scene.add(boxMesh);
+  const sphereMesh = new THREE.Mesh(sphereGeometry, sphereMaterial);
+  sphereMesh.position.y = 0.5;
+  sphereMesh.castShadow = true;
+  scene.add(sphereMesh);
 
   // 그리기
   const clock = new THREE.Clock();
@@ -87,11 +129,10 @@ export default function example() {
 
     let cannonStepTime = 1 / 60;
     if (delta < 0.01) cannonStepTime = 1 / 120;
-
     cannonWorld.step(cannonStepTime, delta, 3);
 
-    boxMesh.position.copy(boxBody.position); // 위치 카피
-    boxMesh.quaternion.copy(boxBody.quaternion); // 회전 카피
+    sphereMesh.position.copy(sphereBody.position); // 위치
+    sphereMesh.quaternion.copy(sphereBody.quaternion); // 회전
 
     renderer.render(scene, camera);
     renderer.setAnimationLoop(draw);

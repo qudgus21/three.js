@@ -1,9 +1,10 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import * as CANNON from "cannon-es";
+import { PreventDragClick } from "./PreventDragClick";
+import { MySphere } from "./MySphere";
 
 export default function example() {
-  // Renderer
   const canvas = document.querySelector("#three-canvas");
   const renderer = new THREE.WebGLRenderer({
     canvas,
@@ -11,11 +12,11 @@ export default function example() {
   });
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.setPixelRatio(window.devicePixelRatio > 1 ? 2 : 1);
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
-  // Scene
   const scene = new THREE.Scene();
 
-  // Camera
   const camera = new THREE.PerspectiveCamera(
     75,
     window.innerWidth / window.innerHeight,
@@ -26,42 +27,44 @@ export default function example() {
   camera.position.z = 4;
   scene.add(camera);
 
-  // Light
   const ambientLight = new THREE.AmbientLight("white", 0.5);
   scene.add(ambientLight);
 
   const directionalLight = new THREE.DirectionalLight("white", 1);
   directionalLight.position.x = 1;
   directionalLight.position.z = 2;
+  directionalLight.castShadow = true;
   scene.add(directionalLight);
 
-  // Controls
   const controls = new OrbitControls(camera, renderer.domElement);
 
-  // Cannon(물리 엔진)
   const cannonWorld = new CANNON.World();
   cannonWorld.gravity.set(0, -10, 0);
 
+  cannonWorld.allowSleep = true;
+  cannonWorld.broadphase = new CANNON.SAPBroadphase(cannonWorld);
+
+  const defaultMaterial = new CANNON.Material("default");
+  const defaultContactMaterial = new CANNON.ContactMaterial(
+    defaultMaterial,
+    defaultMaterial,
+    {
+      friction: 0.5,
+      restitution: 0.3,
+    }
+  );
+  cannonWorld.defaultContactMaterial = defaultContactMaterial;
+
   const floorShape = new CANNON.Plane();
   const floorBody = new CANNON.Body({
-    mass: 0, //바닥은 중력의 영향을 받지 않게 함
+    mass: 0,
     position: new CANNON.Vec3(0, 0, 0),
     shape: floorShape,
+    material: defaultMaterial,
   });
-  //회전시킴 like판때기
   floorBody.quaternion.setFromAxisAngle(new CANNON.Vec3(-1, 0, 0), Math.PI / 2);
   cannonWorld.addBody(floorBody);
 
-  //중심을 기준으로 얼만큼 갈건지..? threejs 0.5면 여기는
-  const boxShape = new CANNON.Box(new CANNON.Vec3(0.25, 2.5, 0.25)); //boxGeometry의 절반크기
-  const boxBody = new CANNON.Body({
-    mass: 1,
-    position: new CANNON.Vec3(0, 10, 0), //이 높이에서 떨어짐
-    shape: boxShape,
-  });
-  cannonWorld.addBody(boxBody);
-
-  // Mesh
   const floorMesh = new THREE.Mesh(
     new THREE.PlaneGeometry(10, 10),
     new THREE.MeshStandardMaterial({
@@ -69,17 +72,15 @@ export default function example() {
     })
   );
   floorMesh.rotation.x = -Math.PI / 2;
+  floorMesh.receiveShadow = true;
   scene.add(floorMesh);
 
-  const boxGeometry = new THREE.BoxGeometry(0.5, 5, 0.5);
-  const boxMaterial = new THREE.MeshStandardMaterial({
+  const spheres = [];
+  const sphereGeometry = new THREE.SphereGeometry(0.5);
+  const sphereMaterial = new THREE.MeshStandardMaterial({
     color: "seagreen",
   });
-  const boxMesh = new THREE.Mesh(boxGeometry, boxMaterial);
-  boxMesh.position.y = 0.5;
-  scene.add(boxMesh);
 
-  // 그리기
   const clock = new THREE.Clock();
 
   function draw() {
@@ -87,11 +88,12 @@ export default function example() {
 
     let cannonStepTime = 1 / 60;
     if (delta < 0.01) cannonStepTime = 1 / 120;
-
     cannonWorld.step(cannonStepTime, delta, 3);
 
-    boxMesh.position.copy(boxBody.position); // 위치 카피
-    boxMesh.quaternion.copy(boxBody.quaternion); // 회전 카피
+    spheres.forEach((item) => {
+      item.mesh.position.copy(item.cannonBody.position);
+      item.mesh.quaternion.copy(item.cannonBody.quaternion);
+    });
 
     renderer.render(scene, camera);
     renderer.setAnimationLoop(draw);
@@ -104,8 +106,42 @@ export default function example() {
     renderer.render(scene, camera);
   }
 
-  // 이벤트
+  function collide() {}
+
   window.addEventListener("resize", setSize);
+  canvas.addEventListener("click", () => {
+    const mySphere = new MySphere({
+      scene,
+      cannonWorld,
+      geometry: sphereGeometry,
+      material: sphereMaterial,
+      x: (Math.random() - 0.5) * 2,
+      y: Math.random() * 5 + 2,
+      z: (Math.random() - 0.5) * 2,
+      scale: Math.random() + 0.2,
+    });
+
+    mySphere.cannonBody.addEventListener("collide", collide);
+
+    spheres.push(mySphere);
+  });
+
+  const preventDragClick = new PreventDragClick(canvas);
+
+  // 삭제하기
+  const btn = document.createElement("button");
+  btn.style.cssText =
+    "position: absolute; left: 20px; top: 20px; font-size: 20px";
+  btn.innerHTML = "삭제";
+  document.body.append(btn);
+
+  btn.addEventListener("click", () => {
+    spheres.forEach((item) => {
+      item.cannonBody.removeEventListener("collide", collide);
+      cannonWorld.removeBody(item.cannonBody); //canon삭제 (이거 실수로라도 안하면 메모리 터짐ㅎㅎ)
+      scene.remove(item.mesh); //mesh 삭제
+    });
+  });
 
   draw();
 }
