@@ -1,6 +1,8 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 
+// 랜덤 파티클
+
 export default function example() {
   const canvas = document.querySelector("#three-canvas");
   const renderer = new THREE.WebGLRenderer({
@@ -33,22 +35,26 @@ export default function example() {
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
 
-  //vertax나누기
-  const geometry = new THREE.SphereGeometry(1, 128, 128);
-  //points material
+  //
+  const geometry = new THREE.BufferGeometry();
+  const count = 1000;
+
+  //꾸물, xyz가 필요하니 점개수의 3배가 필요함
+  const positions = new Float32Array(count * 3);
+  for (let i = 0; i < positions.length; i++) {
+    positions[i] = (Math.random() - 0.5) * 10;
+  }
+  //sphere는 원래가지고 있지만.. 이친구는 BufferGeometry이기 때문에 xyz를 정해주어야함
+  geometry.setAttribute(
+    "position",
+    new THREE.BufferAttribute(positions, 3) // 1개의 Vertex(정점)를 위해 값 3개 필요
+  );
   const material = new THREE.PointsMaterial({
-    size: 0.01,
-    //원근에 관계 없이 균일한 크기로 만들기
-    // sizeAttenuation: false
+    size: 0.03,
+    color: "green",
   });
-
-  //만들고 나서 넣어주어도 된다.
-  // material.size = 0.02;
-  // material.sizeAttenuation = false;
-
-  //mesh가 아닌 Points로 만들어야함
-  const points = new THREE.Points(geometry, material);
-  scene.add(points);
+  const particles = new THREE.Points(geometry, material);
+  scene.add(particles);
 
   const clock = new THREE.Clock();
 

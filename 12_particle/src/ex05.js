@@ -33,22 +33,32 @@ export default function example() {
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
 
-  //vertax나누기
-  const geometry = new THREE.SphereGeometry(1, 128, 128);
-  //points material
-  const material = new THREE.PointsMaterial({
-    size: 0.01,
-    //원근에 관계 없이 균일한 크기로 만들기
-    // sizeAttenuation: false
-  });
+  const planeMesh = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.3, 0.3),
+    new THREE.MeshBasicMaterial({
+      color: "red",
+      side: THREE.DoubleSide, //양면이 다 보임
+    })
+  );
 
-  //만들고 나서 넣어주어도 된다.
-  // material.size = 0.02;
-  // material.sizeAttenuation = false;
+  const sphereGeometry = new THREE.SphereGeometry(1, 8, 8);
 
-  //mesh가 아닌 Points로 만들어야함
-  const points = new THREE.Points(geometry, material);
-  scene.add(points);
+  //각 좌표를 얻어옴
+  const positionArray = sphereGeometry.attributes.position.array;
+
+  // 여러개의 Plane Mesh 생성
+  let plane;
+  for (let i = 0; i < positionArray.length; i += 3) {
+    plane = planeMesh.clone();
+    plane.position.x = positionArray[i];
+    plane.position.y = positionArray[i + 1];
+    plane.position.z = positionArray[i + 2];
+
+    //가운데 바라보도록, 안하면 1자로 서있음
+    plane.lookAt(0, 0, 0);
+
+    scene.add(plane);
+  }
 
   const clock = new THREE.Clock();
 

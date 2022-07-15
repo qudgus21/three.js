@@ -1,7 +1,10 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 
+// ----- 주제: 파티클 이미지
+
 export default function example() {
+  // Renderer
   const canvas = document.querySelector("#three-canvas");
   const renderer = new THREE.WebGLRenderer({
     canvas,
@@ -10,8 +13,10 @@ export default function example() {
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.setPixelRatio(window.devicePixelRatio > 1 ? 2 : 1);
 
+  // Scene
   const scene = new THREE.Scene();
 
+  // Camera
   const camera = new THREE.PerspectiveCamera(
     75,
     window.innerWidth / window.innerHeight,
@@ -22,6 +27,7 @@ export default function example() {
   camera.position.z = 4;
   scene.add(camera);
 
+  // Light
   const ambientLight = new THREE.AmbientLight("white", 0.5);
   scene.add(ambientLight);
 
@@ -30,26 +36,39 @@ export default function example() {
   directionalLight.position.z = 2;
   scene.add(directionalLight);
 
+  // Controls
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
 
-  //vertax나누기
-  const geometry = new THREE.SphereGeometry(1, 128, 128);
-  //points material
+  // Points
+  const geometry = new THREE.BufferGeometry();
+  const count = 1000;
+  const positions = new Float32Array(count * 3);
+  for (let i = 0; i < positions.length; i++) {
+    positions[i] = (Math.random() - 0.5) * 10;
+  }
+  geometry.setAttribute(
+    "position",
+    new THREE.BufferAttribute(positions, 3) // 1개의 Vertex(정점)를 위해 값 3개 필요
+  );
+
+  // 이미지 로드
+  const textureLoader = new THREE.TextureLoader();
+  const particleTexture = textureLoader.load("/images/star.png");
+
   const material = new THREE.PointsMaterial({
-    size: 0.01,
-    //원근에 관계 없이 균일한 크기로 만들기
-    // sizeAttenuation: false
+    size: 0.3,
+    map: particleTexture,
+    // 파티클 이미지를 투명하게 세팅
+    transparent: true,
+    alphaMap: particleTexture,
+    depthWrite: false,
   });
 
-  //만들고 나서 넣어주어도 된다.
-  // material.size = 0.02;
-  // material.sizeAttenuation = false;
+  const particles = new THREE.Points(geometry, material);
+  scene.add(particles);
 
-  //mesh가 아닌 Points로 만들어야함
-  const points = new THREE.Points(geometry, material);
-  scene.add(points);
-
+  // 그리기
   const clock = new THREE.Clock();
 
   function draw() {
@@ -68,6 +87,7 @@ export default function example() {
     renderer.render(scene, camera);
   }
 
+  // 이벤트
   window.addEventListener("resize", setSize);
 
   draw();

@@ -1,6 +1,8 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 
+// ----- 주제: 여러가지 색의 파티클
+
 export default function example() {
   const canvas = document.querySelector("#three-canvas");
   const renderer = new THREE.WebGLRenderer({
@@ -33,22 +35,35 @@ export default function example() {
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
 
-  //vertax나누기
-  const geometry = new THREE.SphereGeometry(1, 128, 128);
-  //points material
+  const geometry = new THREE.BufferGeometry();
+  const count = 1000;
+  const positions = new Float32Array(count * 3);
+  const colors = new Float32Array(count * 3);
+  for (let i = 0; i < positions.length; i++) {
+    positions[i] = (Math.random() - 0.5) * 10;
+    colors[i] = Math.random(); //랜덤 설정
+  }
+  geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+  //color속성 추가
+  geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+
+  const textureLoader = new THREE.TextureLoader();
+  const particleTexture = textureLoader.load("/images/star.png");
+
   const material = new THREE.PointsMaterial({
-    size: 0.01,
-    //원근에 관계 없이 균일한 크기로 만들기
-    // sizeAttenuation: false
+    size: 0.3,
+    // color: 'lime',
+    map: particleTexture,
+    // 파티클 이미지를 투명하게 세팅
+    transparent: true,
+    alphaMap: particleTexture,
+    depthWrite: false,
+    // 색상
+    vertexColors: true,
   });
 
-  //만들고 나서 넣어주어도 된다.
-  // material.size = 0.02;
-  // material.sizeAttenuation = false;
-
-  //mesh가 아닌 Points로 만들어야함
-  const points = new THREE.Points(geometry, material);
-  scene.add(points);
+  const particles = new THREE.Points(geometry, material);
+  scene.add(particles);
 
   const clock = new THREE.Clock();
 
